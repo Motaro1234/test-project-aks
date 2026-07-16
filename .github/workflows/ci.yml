@@ -3,7 +3,7 @@ name: Build and Push Docker Image
 on:
   push:
     branches:
-      - main
+      - second-R
 
 env:
   IMAGE_NAME: webapp
