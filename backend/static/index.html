@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Warehouse Stock — Test App</title>
+<style>
+  :root {
+    --bg: #f7f7f8;
+    --panel: #ffffff;
+    --border: #e2e2e6;
+    --text: #1f2328;
+    --muted: #6b7280;
+    --accent: #2563eb;
+    --ok: #16a34a;
+    --err: #dc2626;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    margin: 0;
+    padding: 24px;
+  }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 24px; font-size: 14px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 1000px; }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .panel h2 { font-size: 14px; margin: 0 0 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+  .status { padding: 10px 12px; border-radius: 6px; font-size: 14px; margin-bottom: 12px; }
+  .status.ok { background: #ecfdf5; color: var(--ok); border: 1px solid #bbf7d0; }
+  .status.err { background: #fef2f2; color: var(--err); border: 1px solid #fecaca; }
+  button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  button.secondary { background: #6b7280; }
+  button:hover { opacity: 0.9; }
+  input, select {
+    width: 100%;
+    padding: 7px 9px;
+    margin-bottom: 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+  }
+  label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 2px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 600; }
+  .full-width { grid-column: 1 / -1; }
+  .row { display: flex; gap: 8px; align-items: center; }
+  .muted { color: var(--muted); font-size: 12px; }
+</style>
+</head>
+<body>
+
+<h1>Warehouse Stock — Test App</h1>
+<p class="sub">Minimal UI to verify the PostgreSQL connection and try out stock CRUD.</p>
+
+<div class="grid">
+
+  <div class="panel full-width">
+    <h2>1. Connection</h2>
+    <div id="conn-status" class="status">Checking...</div>
+    <div class="row">
+      <button onclick="testConnection()">Test DB connection</button>
+      <button class="secondary" onclick="initDb()">Create tables (init-db)</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>2. Add warehouse</h2>
+    <label>Name</label>
+    <input id="wh-name" placeholder="e.g. Main Warehouse">
+    <label>Location</label>
+    <input id="wh-location" placeholder="e.g. Bangkok">
+    <button onclick="addWarehouse()">Add warehouse</button>
+    <table id="wh-table">
+      <thead><tr><th>ID</th><th>Name</th><th>Location</th><th></th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h2>3. Add stock item</h2>
+    <label>Warehouse</label>
+    <select id="item-warehouse"></select>
+    <label>SKU</label>
+    <input id="item-sku" placeholder="e.g. SKU-001">
+    <label>Product name</label>
+    <input id="item-name" placeholder="e.g. Steel bolt 10mm">
+    <label>Quantity</label>
+    <input id="item-qty" type="number" value="0">
+    <label>Unit price (optional)</label>
+    <input id="item-price" type="number" step="0.01">
+    <button onclick="addItem()">Add stock item</button>
+  </div>
+
+  <div class="panel full-width">
+    <h2>4. Stock items</h2>
+    <table id="stock-table">
+      <thead><tr><th>SKU</th><th>Product</th><th>Warehouse</th><th>Qty</th><th>Unit price</th><th></th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="panel full-width">
+    <h2>5. Stock summary (calculated totals)</h2>
+    <table id="summary-table">
+      <thead><tr><th>Warehouse</th><th>Total quantity</th><th>Total value</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+const API = ""; // same origin
+
+async function testConnection() {
+  const el = document.getElementById("conn-status");
+  el.className = "status";
+  el.textContent = "Checking...";
+  try {
+    const res = await fetch(`${API}/api/db-test`);
+    const data = await res.json();
+    if (res.ok) {
+      el.className = "status ok";
+      el.textContent = data.message;
+    } else {
+      throw new Error(data.detail || "Unknown error");
+    }
+  } catch (e) {
+    el.className = "status err";
+    el.textContent = "Connection failed: " + e.message;
+  }
+}
+
+async function initDb() {
+  const res = await fetch(`${API}/api/init-db`, { method: "POST" });
+  const data = await res.json();
+  alert(data.message || data.detail);
+  loadWarehouses();
+}
+
+async function addWarehouse() {
+  const name = document.getElementById("wh-name").value.trim();
+  const location = document.getElementById("wh-location").value.trim();
+  if (!name) return alert("Name is required");
+  const res = await fetch(`${API}/api/warehouses`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, location: location || null }),
+  });
+  const data = await res.json();
+  if (!res.ok) return alert(data.detail);
+  document.getElementById("wh-name").value = "";
+  document.getElementById("wh-location").value = "";
+  loadWarehouses();
+}
+
+async function deleteWarehouse(id) {
+  if (!confirm("Delete this warehouse and all its stock items?")) return;
+  await fetch(`${API}/api/warehouses/${id}`, { method: "DELETE" });
+  loadWarehouses();
+  loadStock();
+  loadSummary();
+}
+
+async function loadWarehouses() {
+  const res = await fetch(`${API}/api/warehouses`);
+  const warehouses = await res.json();
+
+  const tbody = document.querySelector("#wh-table tbody");
+  tbody.innerHTML = "";
+  const select = document.getElementById("item-warehouse");
+  select.innerHTML = "";
+
+  warehouses.forEach(w => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${w.id}</td><td>${w.name}</td><td>${w.location || ""}</td>
+      <td><button class="secondary" onclick="deleteWarehouse(${w.id})">Delete</button></td>`;
+    tbody.appendChild(tr);
+
+    const opt = document.createElement("option");
+    opt.value = w.id;
+    opt.textContent = w.name;
+    select.appendChild(opt);
+  });
+
+  loadSummary();
+}
+
+async function addItem() {
+  const warehouse_id = parseInt(document.getElementById("item-warehouse").value);
+  const sku = document.getElementById("item-sku").value.trim();
+  const product_name = document.getElementById("item-name").value.trim();
+  const quantity = parseInt(document.getElementById("item-qty").value) || 0;
+  const priceRaw = document.getElementById("item-price").value;
+  const unit_price = priceRaw === "" ? null : parseFloat(priceRaw);
+
+  if (!warehouse_id) return alert("Add a warehouse first");
+  if (!sku || !product_name) return alert("SKU and product name are required");
+
+  const res = await fetch(`${API}/api/stock`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ sku, product_name, quantity, unit_price, warehouse_id }),
+  });
+  const data = await res.json();
+  if (!res.ok) return alert(data.detail);
+
+  document.getElementById("item-sku").value = "";
+  document.getElementById("item-name").value = "";
+  document.getElementById("item-qty").value = "0";
+  document.getElementById("item-price").value = "";
+  loadStock();
+}
+
+async function deleteItem(id) {
+  await fetch(`${API}/api/stock/${id}`, { method: "DELETE" });
+  loadStock();
+}
+
+async function loadStock() {
+  const [itemsRes, whRes] = await Promise.all([
+    fetch(`${API}/api/stock`),
+    fetch(`${API}/api/warehouses`),
+  ]);
+  const items = await itemsRes.json();
+  const warehouses = await whRes.json();
+  const whMap = Object.fromEntries(warehouses.map(w => [w.id, w.name]));
+
+  const tbody = document.querySelector("#stock-table tbody");
+  tbody.innerHTML = "";
+  items.forEach(item => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${item.sku}</td><td>${item.product_name}</td>
+      <td>${whMap[item.warehouse_id] || item.warehouse_id}</td>
+      <td>${item.quantity}</td><td>${item.unit_price ?? ""}</td>
+      <td><button class="secondary" onclick="deleteItem(${item.id})">Delete</button></td>`;
+    tbody.appendChild(tr);
+  });
+
+  loadSummary();
+}
+
+async function loadSummary() {
+  const res = await fetch(`${API}/api/stock/summary`);
+  const summary = await res.json();
+  const tbody = document.querySelector("#summary-table tbody");
+  tbody.innerHTML = "";
+  summary.forEach(row => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${row.warehouse_name}</td><td>${row.total_quantity}</td><td>${row.total_value.toFixed(2)}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// Initial load
+testConnection();
+loadWarehouses();
+loadStock();
+</script>
+</body>
+</html>
