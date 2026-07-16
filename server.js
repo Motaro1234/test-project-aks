@@ -78,3 +78,5 @@ app.get('/api/info', (req, res) => {
 app.listen(PORT, () => {
   console.log(`AKS test app listening on port ${PORT}`);
 });
+
+console.log("test tahg");
