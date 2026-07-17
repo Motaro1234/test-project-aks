@@ -44,12 +44,13 @@ jobs:
           git config user.name "GitHub Actions"
           git commit -am "Update image tag to ${{ github.sha }}"
           git push
-      - name: Commit manifest
+      - name: Update Manifest Repository
         run: |
+          git clone https://x-access-token:${{ secrets.MANIFEST_REPO_TOKEN }}@github.com/Motaro1234/test-project-aks-manifests.git
+          cd test-project-aks-manifests
+          sed -i "s#^\([[:space:]]*image:[[:space:]]*\).*#\1${{ secrets.ACR_NAME }}.azurecr.io/webapp:${{ github.sha }}#" deployment.yaml
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add .
-          git status
           git add deployment.yaml
-          git commit -m "Update image to ${{ github.sha }}"
-          git push
+          git commit -m "Update image to ${{ github.sha }}" || echo "No changes"
+          git push origin main
