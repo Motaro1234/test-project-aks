@@ -10,11 +10,9 @@ env:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-
       - name: Checkout Source
         uses: actions/checkout@v4
 
@@ -33,24 +31,35 @@ jobs:
 
       - name: Push Image
         run: |
-          docker push ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }} 
+          docker push ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
 
-      - name: Update deployment image
-        run: |
-          git clone https://x-access-token:${{ secrets.MANIFEST_REPO_TOKEN}}@github.com/Motaro1234/test-project-aks-manifests.git
-          cd test-project-aks-manifests
-          sed -i "s|image:.*|image: ${{ secrets.ACR_NAME }}.azurecr.io/webapp:${{ github.sha }}|g" deployment.yaml
-          git config user.email "ci@example.com"
-          git config user.name "GitHub Actions"
-          git commit -am "Update image tag to ${{ github.sha }}"
-          git push
+      # - name: Update deployment image
+      #   run: |
+      #     git clone https://x-access-token:${{ secrets.MANIFEST_REPO_TOKEN}}@github.com/Motaro1234/test-project-aks-manifests.git
+      #     cd test-project-aks-manifests
+      #     sed -i "s|image:.*|image: ${{ secrets.ACR_NAME }}.azurecr.io/webapp:${{ github.sha }}|g" deployment.yaml
+      #     git config user.email "ci@example.com"
+      #     git config user.name "GitHub Actions"
+      #     git commit -am "Update image tag to ${{ github.sha }}"
+      #     git push
       - name: Update Manifest Repository
         run: |
           git clone https://x-access-token:${{ secrets.MANIFEST_REPO_TOKEN }}@github.com/Motaro1234/test-project-aks-manifests.git
+
           cd test-project-aks-manifests
+
           sed -i "s#^\([[:space:]]*image:[[:space:]]*\).*#\1${{ secrets.ACR_NAME }}.azurecr.io/webapp:${{ github.sha }}#" deployment.yaml
+
+          echo "===== deployment.yaml ====="
+          cat deployment.yaml
+
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
+
           git add deployment.yaml
+
+          git status
+
           git commit -m "Update image to ${{ github.sha }}" || echo "No changes"
+
           git push origin main
