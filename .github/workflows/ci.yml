@@ -37,7 +37,13 @@ jobs:
 
       - name: Update deployment image
         run: |
+          git clone https://x-access-token:${{ secrets.MANIFEST_REPO_TOKEN }}@github.com/Motaro1234/test-project-aks-manifests.git
+          cd test-project-aks-manifests
           sed -i "s|image: .*|image: ${{ secrets.ACR_NAME }}.azurecr.io/webapp:${{ github.sha }}|g" deployment.yaml
+          git config user.email "ci@example.com"
+          git config user.name "GitHub Actions"
+          git commit -am "Update image tag to ${{ github.sha }}"
+          git push
       - name: Commit manifest
         run: |
           git config user.name "github-actions"
