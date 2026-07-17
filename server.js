@@ -10,7 +10,7 @@ let requestCount = 0;
 app.get('/', (req, res) => {
   requestCount++;
   const info = {
-    message: 'สวัสดีจาก AKS Test App 👋',
+    message: 'สวัสดีจาก AKS Test App 👋55555',
     version: APP_VERSION,
     hostname: os.hostname(),          // = ชื่อ Pod ใน Kubernetes
     podIP: process.env.POD_IP || 'N/A',
