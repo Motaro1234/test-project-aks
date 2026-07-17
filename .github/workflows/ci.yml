@@ -48,7 +48,8 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-
+          git add .
+          git status
           git add deployment.yaml
           git commit -m "Update image to ${{ github.sha }}"
           git push
