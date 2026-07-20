@@ -9,6 +9,7 @@ env:
   IMAGE_NAME: webapp
 
 jobs:
+  # ---------- Job 1: Build + Push Image (รันทันที ไม่ต้องรอ approve) ----------
   build:
     runs-on: ubuntu-latest
 
@@ -33,15 +34,13 @@ jobs:
         run: |
           docker push ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
 
-      # - name: Update deployment image
-      #   run: |
-      #     git clone https://x-access-token:${{ secrets.MANIFEST_REPO_TOKEN}}@github.com/Motaro1234/test-project-aks-manifests.git
-      #     cd test-project-aks-manifests
-      #     sed -i "s|image:.*|image: ${{ secrets.ACR_NAME }}.azurecr.io/webapp:${{ github.sha }}|g" deployment.yaml
-      #     git config user.email "ci@example.com"
-      #     git config user.name "GitHub Actions"
-      #     git commit -am "Update image tag to ${{ github.sha }}"
-      #     git push
+  # ---------- Job 2: Update Manifest + Deploy (ต้องรอ Approve เสมอ) ----------
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production-manual-approval   # <-- เพิ่มบรรทัดนี้ ทำให้ job ค้างรอ Approve เสมอ
+
+    steps:
       - name: Update Manifest Repository
         run: |
           git clone https://x-access-token:${{ secrets.MANIFEST_REPO_TOKEN }}@github.com/Motaro1234/test-project-aks-manifests.git
