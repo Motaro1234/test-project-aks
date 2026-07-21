@@ -42,10 +42,19 @@ jobs:
 
     steps:
       - name: Update Manifest Repository
+        env:
+          GH_TOKEN: ${{ secrets.MANIFEST_REPO_TOKEN }}
         run: |
           git clone https://x-access-token:${{ secrets.MANIFEST_REPO_TOKEN }}@github.com/Motaro1234/test-project-aks-manifests.git
 
           cd test-project-aks-manifests
+
+          BRANCH_NAME="deploy/${{ github.sha }}"
+
+          # ลบ branch เดิมบน remote ก่อน ถ้ามีอยู่แล้ว (กัน non-fast-forward)
+          git push origin --delete "$BRANCH_NAME" || echo "Branch does not exist yet, skip delete"
+
+          git checkout -b "$BRANCH_NAME"
 
           sed -i "s#^\([[:space:]]*image:[[:space:]]*\).*#\1${{ secrets.ACR_NAME }}.azurecr.io/webapp:${{ github.sha }}#" deployment.yaml
 
@@ -59,4 +68,17 @@ jobs:
 
           git status
 
-          git commit -m "Update image to ${{ github.sha }}" || echo "No changes"
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+
+          git commit -m "Update image to ${{ github.sha }}"
+          git push origin "$BRANCH_NAME"
+
+          gh pr create \
+            --repo Motaro1234/test-project-aks-manifests \
+            --base main \
+            --head "$BRANCH_NAME" \
+            --title "Deploy ${{ github.sha }}" \
+            --body "Triggered by ${{ github.actor }} from workflow run ${{ github.run_id }}."
