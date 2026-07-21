@@ -38,10 +38,13 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    environment: production-manual-approval   # <-- เพิ่มบรรทัดนี้ ทำให้ job ค้างรอ Approve เสมอ
+    environment: production-manual-approval
 
     steps:
-      - name: Update Manifest Repository
+      - name: Install yq
+        run: sudo snap install yq
+
+      - name: Update Manifest Repository (Helm values.yaml)
         env:
           GH_TOKEN: ${{ secrets.MANIFEST_REPO_TOKEN }}
         run: |
@@ -49,22 +52,19 @@ jobs:
 
           cd test-project-aks-manifests
 
-          BRANCH_NAME="deploy/${{ github.sha }}"
-
-          # ลบ branch เดิมบน remote ก่อน ถ้ามีอยู่แล้ว (กัน non-fast-forward)
-          git push origin --delete "$BRANCH_NAME" || echo "Branch does not exist yet, skip delete"
+          BRANCH_NAME="deploy/${{ github.sha }}-${{ github.run_id }}"
 
           git checkout -b "$BRANCH_NAME"
 
-          sed -i "s#^\([[:space:]]*image:[[:space:]]*\).*#\1${{ secrets.ACR_NAME }}.azurecr.io/webapp:${{ github.sha }}#" deployment.yaml
+          yq -i '.image.tag = "${{ github.sha }}"' app-chart/values.yaml
 
-          echo "===== deployment.yaml ====="
-          cat deployment.yaml
+          echo "===== app-chart/values.yaml ====="
+          cat app-chart/values.yaml
 
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
-          git add deployment.yaml
+          git add app-chart/values.yaml
 
           git status
 
@@ -73,7 +73,7 @@ jobs:
             exit 0
           fi
 
-          git commit -m "Update image to ${{ github.sha }}"
+          git commit -m "Update image tag to ${{ github.sha }}"
           git push origin "$BRANCH_NAME"
 
           gh pr create \
