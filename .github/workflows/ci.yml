@@ -60,5 +60,3 @@ jobs:
           git status
 
           git commit -m "Update image to ${{ github.sha }}" || echo "No changes"
-
-          git push origin main

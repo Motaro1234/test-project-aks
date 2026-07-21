@@ -45,7 +45,7 @@ app.get('/', (req, res) => {
         <h1>${info.message} <span class="badge">${info.version}</span></h1>
         <table>
           <tr><td>Pod Hostname</td><td>${info.hostname}</td></tr>
-          <tr><td>Pod IP</td><td>${info.podIP}</td></tr>
+          <tr><td>Pod IP</td><td>this is IP : ${info.podIP}</td></tr>
           <tr><td>Node Name</td><td>${info.nodeName}</td></tr>
           <tr><td>Namespace</td><td>${info.namespace}</td></tr>
           <tr><td>Request # (ตั้งแต่เริ่ม pod นี้)</td><td>${info.requestCount}</td></tr>
