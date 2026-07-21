@@ -123,10 +123,10 @@ app.post('/submit', async (req, res) => {
       'INSERT INTO users (name, email, phone) VALUES ($1, $2, $3)',
       [name, email, phone || null]
     );
-    res.redirect('/'); // กลับไปหน้าแรก จะเห็นข้อมูลที่เพิ่งเพิ่มในตาราง
+    res.redirect('/');
   } catch (err) {
-    console.error('Insert error:', err.message);
-    res.status(500).send(`บันทึกข้อมูลไม่สำเร็จ: ${err.message}`);
+    console.error('Insert error (full):', err);   // <-- เปลี่ยนตรงนี้ log ทั้งก้อน
+    res.status(500).send(`บันทึกข้อมูลไม่สำเร็จ: ${err.message || JSON.stringify(err)}`);
   }
 });
 
