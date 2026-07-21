@@ -77,4 +77,4 @@ jobs:
             --head "$BRANCH_NAME" \
             --title "Deploy ${{ github.sha }}" \
             --body "Triggered by ${{ github.actor }} from workflow run ${{ github.run_id }}. Merge this PR to deploy to AKS via Argo CD."
-          git checkout newrules
+  
