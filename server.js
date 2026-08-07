@@ -114,11 +114,12 @@ app.get('/', async (req, res) => {
           <tr><th>ID</th><th>ชื่อ</th><th>อีเมล</th><th>เบอร์โทร</th></tr>
           ${usersRows}
         </table>
+      <div class="card">
+        <img src="/images/321.jpg" alt="321">
+      </div>
       </div>
 
-      <div class="card-image">
-      321.jpg
-      </div>
+      
     </body>
     </html>
   `);
