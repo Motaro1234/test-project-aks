@@ -8,9 +8,6 @@ const APP_VERSION = process.env.APP_VERSION || 'v1';
 
 //script for pull images from NFS
 const path = require("path");
-
-const app = express();
-
 // Folder ที่เก็บรูป
 const IMAGE_PATH = "Z:\\images";
 
