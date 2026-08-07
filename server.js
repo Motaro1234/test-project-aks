@@ -6,6 +6,20 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const APP_VERSION = process.env.APP_VERSION || 'v1';
 
+//script for pull images from NFS
+const express = require("express");
+const path = require("path");
+
+const app = express();
+
+// Folder ที่เก็บรูป
+const IMAGE_PATH = "Z:\\images";
+
+// เปิดให้เข้าถึงรูปผ่าน URL
+app.use("/images", express.static(IMAGE_PATH));
+
+
+
 // Middleware สำหรับอ่านข้อมูลจากฟอร์ม (application/x-www-form-urlencoded)
 app.use(express.urlencoded({ extended: true }));
 
@@ -104,6 +118,10 @@ app.get('/', async (req, res) => {
           <tr><th>ID</th><th>ชื่อ</th><th>อีเมล</th><th>เบอร์โทร</th></tr>
           ${usersRows}
         </table>
+      </div>
+
+      <div class="card-image">
+      321.jpg
       </div>
     </body>
     </html>
