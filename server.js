@@ -7,7 +7,6 @@ const PORT = process.env.PORT || 3000;
 const APP_VERSION = process.env.APP_VERSION || 'v1';
 
 //script for pull images from NFS
-const express = require("express");
 const path = require("path");
 
 const app = express();
