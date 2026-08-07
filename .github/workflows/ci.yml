@@ -56,7 +56,7 @@ jobs:
 
           git checkout -b "$BRANCH_NAME"
 
-          yq -i '.image.tag = "${{ github.sha }}"' app-chart/values.yaml
+          yq -i ".image.tag = \"${{ github.sha }}\"" app-chart/values.yaml
 
           echo "===== app-chart/values.yaml ====="
           cat app-chart/values.yaml
